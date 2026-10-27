@@ -103,4 +103,53 @@ describe('RegionMask', () => {
       await event
     })
   })
+
+  describe('remove() restores the map', () => {
+    const traces = () => ({
+      classes: [...container.classList].filter((c) => c.startsWith('leaflet-region-mask')),
+      svg: container.querySelectorAll('svg').length,
+      style: container.getAttribute('style'),
+    })
+
+    it('after ready: no mask, renderer, defs, classes or styles left', async () => {
+      const before = traces()
+      const mask = regionMask(square)
+      const event = settled(mask)
+      mask.addTo(map)
+      await event
+      mask.remove()
+      expect(traces()).toEqual(before)
+      expect(map.hasLayer(mask)).toBe(false)
+    })
+
+    it('while loading: aborts the fetch, fires nothing, draws nothing', async () => {
+      let signal: AbortSignal | undefined
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (_url: string, init: RequestInit) => {
+          signal = init.signal ?? undefined
+          return new Response(JSON.stringify(square))
+        }),
+      )
+      const before = traces()
+      const mask = regionMask('/region.geojson')
+      const fired: string[] = []
+      mask.on('ready error', (e) => fired.push(e.type))
+      mask.addTo(map)
+      mask.remove()
+      await new Promise((done) => setTimeout(done, 20))
+      expect(signal?.aborted).toBe(true)
+      expect(fired).toEqual([])
+      expect(traces()).toEqual(before)
+    })
+
+    it('can be added again after remove()', async () => {
+      const mask = regionMask(square)
+      mask.addTo(map).remove()
+      const event = settled(mask)
+      mask.addTo(map)
+      expect(await event).toBe('ready')
+      expect(container.querySelectorAll('path.leaflet-region-mask')).toHaveLength(1)
+    })
+  })
 })
