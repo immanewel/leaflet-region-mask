@@ -1,13 +1,16 @@
 import type { GeoJSON } from 'geojson'
-import { Layer, polygon, svg, type LayerOptions, type Map, type Polygon } from 'leaflet'
+import { DomUtil, Layer, polygon, svg, type LayerOptions, type Map, type Polygon } from 'leaflet'
 import { maskRings } from './rings'
 
 export interface RegionMaskOptions extends LayerOptions {
+  /** Hide the tile pane until the mask is in place (or the region fails to load). Default `true`. */
+  hideTilesUntilReady?: boolean
   /** CSS class of the mask path, and prefix of the other classes. Default `leaflet-region-mask`. */
   className?: string
 }
 
-const DEFAULTS: Required<Pick<RegionMaskOptions, 'className'>> = {
+const DEFAULTS = {
+  hideTilesUntilReady: true,
   className: 'leaflet-region-mask',
 }
 
@@ -32,6 +35,13 @@ export class RegionMask extends Layer {
   }
 
   onAdd(map: Map): this {
+    const container = map.getContainer()
+    const loading = `${this.options.className}-loading`
+    if (this.options.hideTilesUntilReady) DomUtil.addClass(container, loading)
+    const settle = (type: 'ready' | 'error', data?: object) => {
+      DomUtil.removeClass(container, loading)
+      this.fire(type, data)
+    }
     const abort = new AbortController()
     load(this.source, abort.signal).then(
       (data) => {
@@ -40,9 +50,9 @@ export class RegionMask extends Layer {
           className: this.options.className,
           renderer: svg(),
         }).addTo(map)
-        this.fire('ready')
+        settle('ready')
       },
-      (error: unknown) => this.fire('error', { error }),
+      (error: unknown) => settle('error', { error }),
     )
     return this
   }

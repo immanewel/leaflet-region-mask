@@ -69,4 +69,38 @@ describe('RegionMask', () => {
       expect(container.querySelectorAll('path.leaflet-region-mask')).toHaveLength(0)
     })
   }
+
+  describe('tiles hidden until ready (loading class on the map container)', () => {
+    const loading = () => container.classList.contains('leaflet-region-mask-loading')
+
+    it('set while the region loads, cleared on ready', async () => {
+      const mask = regionMask(square)
+      const event = settled(mask)
+      mask.addTo(map)
+      expect(loading()).toBe(true)
+      await event
+      expect(loading()).toBe(false)
+    })
+
+    it('cleared on error too: the tiles show without a mask', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => new Response('', { status: 500 })),
+      )
+      const mask = regionMask('/region.geojson')
+      const event = settled(mask)
+      mask.addTo(map)
+      expect(loading()).toBe(true)
+      expect(await event).toBe('error')
+      expect(loading()).toBe(false)
+    })
+
+    it('never set with hideTilesUntilReady: false', async () => {
+      const mask = regionMask(square, { hideTilesUntilReady: false })
+      const event = settled(mask)
+      mask.addTo(map)
+      expect(loading()).toBe(false)
+      await event
+    })
+  })
 })
