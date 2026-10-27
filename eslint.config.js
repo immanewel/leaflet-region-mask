@@ -8,5 +8,6 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.strict,
   { languageOptions: { globals: { ...globals.browser, ...globals.node } } },
+  { files: ['**/*.test.ts', 'e2e/**'], rules: { '@typescript-eslint/no-non-null-assertion': 'off' } },
   prettier,
 )
