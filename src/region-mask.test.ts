@@ -1,7 +1,7 @@
 import type { Polygon } from 'geojson'
-import { map as leafletMap, type Map } from 'leaflet'
+import { map as leafletMap, SVG, type Map } from 'leaflet'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { regionMask, type RegionMask } from './region-mask'
+import { regionMask, type RegionMask, type RegionMaskOptions } from './region-mask'
 
 const square: Polygon = {
   type: 'Polygon',
@@ -102,6 +102,72 @@ describe('RegionMask', () => {
       expect(loading()).toBe(false)
       await event
     })
+  })
+
+  describe('grid', () => {
+    const add = async (options?: RegionMaskOptions) => {
+      const mask = regionMask(square, options)
+      const event = settled(mask)
+      mask.addTo(map)
+      await event
+      const path = container.querySelector<SVGPathElement>('path.leaflet-region-mask')!
+      const id = /^url\("?#([^")]+)"?\)$/.exec(path.style.fill)?.[1]
+      return { pattern: id ? container.querySelector(`pattern#${id}`) : null, path }
+    }
+
+    it('default: the mask fill is a 24 px grid pattern in map units, ground + line classes', async () => {
+      const { pattern } = await add()
+      expect(pattern?.getAttribute('patternUnits')).toBe('userSpaceOnUse')
+      expect([pattern?.getAttribute('width'), pattern?.getAttribute('height')]).toEqual(['24', '24'])
+      expect(pattern?.querySelector('.leaflet-region-mask-ground')).not.toBeNull()
+      expect(pattern?.querySelector('.leaflet-region-mask-grid')).not.toBeNull()
+      expect(container.style.getPropertyValue('--region-mask-cell')).toBe('24px')
+    })
+
+    it('grid: 40 sets the cell size of the pattern and of the map background', async () => {
+      const { pattern } = await add({ grid: 40 })
+      expect([pattern?.getAttribute('width'), pattern?.getAttribute('height')]).toEqual(['40', '40'])
+      expect(container.style.getPropertyValue('--region-mask-cell')).toBe('40px')
+    })
+
+    it('grid: false: plain ground, no pattern', async () => {
+      const { pattern, path } = await add({ grid: false })
+      expect(pattern).toBeNull()
+      expect(path.style.fill).toBe('')
+      expect(container.querySelector('pattern')).toBeNull()
+      expect(container.classList.contains('leaflet-region-mask-plain')).toBe(true)
+    })
+
+    it('two masks on two maps get different pattern ids', async () => {
+      const other = document.createElement('div')
+      document.body.append(other)
+      const otherMap = leafletMap(other).setView([0, 0], 2)
+      const mask = regionMask(square)
+      const event = settled(mask)
+      mask.addTo(otherMap)
+      await event
+      const { pattern } = await add()
+      expect(other.querySelector('pattern')?.id).not.toBe(pattern?.id)
+      otherMap.remove()
+      other.remove()
+    })
+  })
+
+  it('padding: the SVG renderer covers that many map sizes around the view (default 1)', async () => {
+    const paddings = async (options?: RegionMaskOptions) => {
+      const mask = regionMask(square, options)
+      const event = settled(mask)
+      mask.addTo(map)
+      await event
+      const found: unknown[] = []
+      map.eachLayer((layer) => {
+        if (layer instanceof SVG) found.push(layer.options.padding)
+      })
+      mask.remove()
+      return found
+    }
+    expect(await paddings()).toEqual([1])
+    expect(await paddings({ padding: 0.5 })).toEqual([0.5])
   })
 
   describe('remove() restores the map', () => {
