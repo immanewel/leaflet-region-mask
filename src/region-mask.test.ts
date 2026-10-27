@@ -1,6 +1,6 @@
 import type { Polygon } from 'geojson'
 import { map as leafletMap, type Map } from 'leaflet'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { regionMask, type RegionMask } from './region-mask'
 
 const square: Polygon = {
@@ -26,6 +26,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  vi.unstubAllGlobals()
   map.remove()
   container.remove()
 })
@@ -41,4 +42,31 @@ describe('RegionMask', () => {
     expect(await event).toBe('ready')
     expect(container.querySelectorAll('svg path.leaflet-region-mask')).toHaveLength(1)
   })
+
+  it('URL source: fetches the GeoJSON and fires ready', async () => {
+    const fetch = vi.fn(async () => new Response(JSON.stringify(square)))
+    vi.stubGlobal('fetch', fetch)
+    const mask = regionMask('/region.geojson')
+    const event = settled(mask)
+    mask.addTo(map)
+    expect(await event).toBe('ready')
+    expect(fetch).toHaveBeenCalledWith('/region.geojson', expect.anything())
+    expect(container.querySelectorAll('path.leaflet-region-mask')).toHaveLength(1)
+  })
+
+  for (const [name, respond] of [
+    ['HTTP 404', async () => new Response('', { status: 404 })],
+    ['network error', async () => Promise.reject(new TypeError('Failed to fetch'))],
+  ] as const) {
+    it(`URL source, ${name}: fires error with the cause, draws no mask`, async () => {
+      vi.stubGlobal('fetch', vi.fn(respond))
+      const mask = regionMask('/region.geojson')
+      const error = new Promise<unknown>((done) =>
+        mask.once('error', (e) => done((e as unknown as { error: unknown }).error)),
+      )
+      mask.addTo(map)
+      expect(await error).toBeInstanceOf(Error)
+      expect(container.querySelectorAll('path.leaflet-region-mask')).toHaveLength(0)
+    })
+  }
 })
