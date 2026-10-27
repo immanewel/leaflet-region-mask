@@ -1,0 +1,48 @@
+/*
+ * leaflet-region-mask. Theme with the --region-mask-* variables on any element at or above the map.
+ * Defaults follow the page colour scheme (`color-scheme: light dark`, or `dark` on a toggled theme).
+ * Default edge: >= 3:1 against the ground and against OpenStreetMap land, light and dark.
+ */
+:where(:root) {
+  --region-mask-ground: light-dark(#e7e5e4, #0a1514);
+  --region-mask-grid: light-dark(#d6d3d1, #1c2f2d);
+  --region-mask-edge: light-dark(#0f766e, #0f8a80);
+  --region-mask-edge-width: 2px;
+}
+
+/* The mask look on the map itself: shows before the mask is in place, and past its edge while a pan redraws it. */
+.leaflet-container.leaflet-region-mask-map {
+  background-color: var(--region-mask-ground);
+  background-image:
+    linear-gradient(var(--region-mask-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--region-mask-grid) 1px, transparent 1px);
+  background-size: var(--region-mask-cell, 24px) var(--region-mask-cell, 24px);
+}
+
+.leaflet-container.leaflet-region-mask-plain {
+  background-image: none;
+}
+
+/* No flash of world tiles: hidden until the mask is in place or the region fails to load. */
+.leaflet-region-mask-loading .leaflet-tile-pane {
+  visibility: hidden;
+}
+
+/* The mask: opaque ground (the grid pattern fill is set inline), region edge line. */
+.leaflet-container path.leaflet-region-mask {
+  fill: var(--region-mask-ground);
+  fill-opacity: 1;
+  stroke: var(--region-mask-edge);
+  stroke-width: var(--region-mask-edge-width);
+  stroke-opacity: 1;
+}
+
+.leaflet-region-mask-ground {
+  fill: var(--region-mask-ground);
+}
+
+.leaflet-region-mask-grid {
+  fill: none;
+  stroke: var(--region-mask-grid);
+  stroke-width: 1px;
+}
