@@ -25,3 +25,15 @@ export function contrastRatio(a: Rgb | string, b: Rgb | string): number {
 
 /** OpenStreetMap land colour: the map detail next to the region edge (the plugin does not change tiles). */
 export const OSM_LAND = '#f2efe9'
+
+/**
+ * True when `pixel` is `a`, `b` or a mix of the two (as antialiasing paints a thin `b` line on an `a` ground),
+ * within `tolerance` per channel. A colour off that mix line is something else painted there.
+ */
+export function isBlendOf(pixel: Rgb, a: Rgb, b: Rgb, tolerance = 3): boolean {
+  const d = [0, 1, 2].map((i) => b[i]! - a[i]!)
+  const length2 = d.reduce((s, v) => s + v * v, 0)
+  const along = length2 === 0 ? 0 : d.reduce((s, v, i) => s + v * (pixel[i]! - a[i]!), 0) / length2
+  const t = Math.min(1, Math.max(0, along))
+  return [0, 1, 2].every((i) => Math.abs(pixel[i]! - (a[i]! + t * d[i]!)) <= tolerance)
+}
