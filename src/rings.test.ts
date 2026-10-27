@@ -1,6 +1,6 @@
 import type { Polygon } from 'geojson'
 import { describe, expect, it } from 'vitest'
-import { maskRings, WORLD } from './rings'
+import { maskRings, WORLD, type Ring } from './rings'
 
 const square: Polygon = {
   type: 'Polygon',
@@ -73,5 +73,24 @@ describe('maskRings', () => {
         ],
       }),
     ).toEqual([WORLD])
+  })
+
+  it('antimeridian: a ring across 180° stays continuous (no step over 180°) and inside the world ring', () => {
+    const fiji: Polygon = {
+      type: 'Polygon',
+      coordinates: [
+        [
+          [179, -17],
+          [-179, -17],
+          [-179, -16],
+          [179, -16],
+          [179, -17],
+        ],
+      ],
+    }
+    const [world, ring] = maskRings(fiji) as [Ring, Ring]
+    expect(ring.map(([, lng]) => lng)).toEqual([179, 181, 181, 179, 179])
+    const lngs = world.map(([, lng]) => lng)
+    expect(ring.every(([, lng]) => lng > Math.min(...lngs) && lng < Math.max(...lngs))).toBe(true)
   })
 })
