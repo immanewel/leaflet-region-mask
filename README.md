@@ -1,11 +1,26 @@
 # leaflet-region-mask
 
-Show map detail only inside a region. Outside is an opaque ground with a grid, themed by CSS variables, with no
-flash of world tiles. See [docs/PRD.md](docs/PRD.md).
+[![npm version](https://img.shields.io/npm/v/leaflet-region-mask)](https://www.npmjs.com/package/leaflet-region-mask)
+[![bundle size](https://img.shields.io/bundlephobia/minzip/leaflet-region-mask)](https://bundlephobia.com/package/leaflet-region-mask)
+[![license](https://img.shields.io/npm/l/leaflet-region-mask)](LICENSE)
+[![CI](https://github.com/immanewel/leaflet-region-mask/actions/workflows/ci.yml/badge.svg)](https://github.com/immanewel/leaflet-region-mask/actions/workflows/ci.yml)
 
-Status: private, pre-release. Leaflet 1.9 is the only peer dependency. About 1.5 KB min+gzip (JS + CSS).
+Leaflet plugin: show map detail only inside a region. Outside is an opaque ground with a grid, themed by CSS
+variables, with no flash of world tiles. Leaflet 1.9 is the only peer dependency. About 1.5 KB min+gzip (JS + CSS).
+
+| Light                                                        | Dark                                                       |
+| ------------------------------------------------------------ | ---------------------------------------------------------- |
+| ![Demo, light theme: Tanzania mainland](docs/demo-light.png) | ![Demo, dark theme: Tanzania mainland](docs/demo-dark.png) |
+
+## Install
+
+```sh
+npm install leaflet leaflet-region-mask
+```
 
 ## Usage
+
+ESM, with the CSS imported once (a bundler such as Vite or webpack handles the `.css` import):
 
 ```ts
 import 'leaflet/dist/leaflet.css'
@@ -37,7 +52,12 @@ one piece. Other geometry types are ignored.
 | `hideTilesUntilReady` | `true`                  | Hide the tile pane until the mask is in place. On a load error the tiles show.               |
 | `className`           | `'leaflet-region-mask'` | Class of the mask path, and prefix of the other classes (see below).                         |
 
-Events: `ready` (mask in place), `error` (the region did not load; `e.error` holds the cause; no mask).
+## Events
+
+| Event   | When                     | Data                                                    |
+| ------- | ------------------------ | ------------------------------------------------------- |
+| `ready` | The mask is in place.    | None                                                    |
+| `error` | The region did not load. | `e.error`: the cause. No mask is drawn; the tiles show. |
 
 ## CSS variables
 
@@ -51,8 +71,7 @@ Set them on any element at or above the map (`:root`, a theme class, the map its
 | `--region-mask-edge-width` | `2px`                  | Region edge line width           |
 
 The defaults use `light-dark()`, so they follow the page colour scheme: set `color-scheme: light dark` (system) or
-`color-scheme: dark` (a theme toggle) on the page. The default edge has at least 3:1 contrast against the ground and
-against OpenStreetMap land, in both schemes (a unit test checks this). If you change the colours, keep that contrast.
+`color-scheme: dark` (a theme toggle) on the page.
 
 Classes (with the default prefix): `leaflet-region-mask` (mask path), `-map` (on the map container: ground and grid
 background), `-plain` (`grid: false`), `-loading` (tiles hidden), `-ground` and `-grid` (pattern parts). With a
@@ -64,6 +83,13 @@ One Leaflet polygon: a rectangle around the world (three world widths) with the 
 It is drawn by its own SVG renderer with padding, filled with an SVG `<pattern>` in map units, so the grid moves with
 the map. The map container gets the same ground and grid as its background, so the mask look shows before the
 outline loads and past the SVG edge while a pan redraws it.
+
+## Accessibility
+
+The region edge is the main visual cue between map and mask. The default edge colour has at least 3:1 contrast
+against the ground and against OpenStreetMap land, in light and dark (WCAG 1.4.11, non-text contrast; a unit test
+checks this). If you change `--region-mask-edge`, `--region-mask-ground` or the tiles, keep that contrast. The mask
+is not interactive and adds no focusable elements; give the map container an accessible name, as the demo does.
 
 ## Compared with other plugins
 
@@ -80,6 +106,14 @@ outline loads and past the SVG edge while a pan redraws it.
 [mask]: https://github.com/ptma/Leaflet.Mask
 [bc]: https://github.com/aparshin/leaflet-boundary-canvas
 
+Short version: leaflet.mask is the closest; it draws the same kind of polygon but with one flat fill set in code.
+leaflet-boundary-canvas clips the tiles themselves, so the outside is empty, at a cost per tile.
+
+## Browser support
+
+Browsers that support CSS `light-dark()`: Chrome and Edge 123+, Firefox 120+, Safari 17.5+. The JS targets ES2020.
+For older browsers, set the four `--region-mask-*` variables to plain colours (no `light-dark()`).
+
 ## Development
 
 ```sh
@@ -89,8 +123,9 @@ npx playwright install chromium && npm run test:e2e   # pixel test on the demo, 
 npm run demo                                          # http://localhost:5180
 ```
 
-The demo uses the Tanzania mainland outline from Mmuya House Rent (`demo/tz-mainland.geojson`).
+The demo uses a Tanzania mainland outline (`demo/tz-mainland.geojson`). Map tiles in the screenshots:
+© OpenStreetMap contributors.
 
 ## License
 
-MIT
+[MIT](LICENSE) © Emmanuel Ng'wandu

@@ -13,8 +13,6 @@ A small Leaflet plugin. It draws one polygon: a rectangle around the world with 
 gets an opaque ground with a grid (SVG pattern in map units, so it moves with the map). Colours come from CSS
 variables, so themes work with no code. Tiles stay hidden until the mask is in place (no flash).
 
-Origin: the mainland mask of Mmuya House Rent (`src/components/houses/tz-leaflet.ts`, `src/lib/houses/map-picker.ts`).
-
 ## User stories
 
 1. As a map developer, I add `L.regionMask(geojson).addTo(map)`, so only my region shows map detail.
