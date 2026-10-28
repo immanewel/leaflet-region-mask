@@ -1,0 +1,38 @@
+# Publish to npm when a version tag (v*) is pushed.
+#
+# Uses npm trusted publishing (OIDC): no NPM_TOKEN secret. npm creates provenance automatically.
+#
+# The first version (0.1.0) is published by hand, because a Trusted Publisher can only be set on a package that
+# exists. Locally there is no OIDC provider, so turn provenance off for that one publish:
+#   npm run ci && npm publish --provenance=false
+# Afterwards, on npmjs.com > leaflet-region-mask > Settings > Trusted Publisher, link the GitHub repo
+# immanewel/leaflet-region-mask with workflow file `release.yml`. Then each `git push origin vX.Y.Z` publishes.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          cache: npm
+      # Trusted publishing needs npm >= 11.5.1.
+      - run: npm install -g npm@^11.5.1
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run ci
+      # The tag must match package.json, or the wrong version would be published.
+      - run: test "v$(node -p 'require("./package.json").version')" = "$GITHUB_REF_NAME"
+      # `npm run ci` ran above; --ignore-scripts skips the same checks again in prepublishOnly.
+      - run: npm publish --ignore-scripts
