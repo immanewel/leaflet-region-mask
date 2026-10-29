@@ -9,6 +9,7 @@ const LAND = parseHex(OSM_LAND)
 
 // Places (lat, lng) far from the mainland edge at the demo's start view.
 const DODOMA = { lat: -6.17, lng: 35.74 } // mainland: tiles
+const LAKE_VICTORIA = { lat: -1.5, lng: 32.8 } // Tanzanian lake water: tiles
 const UNGUJA = { lat: -6.13, lng: 39.36 } // Zanzibar: masked
 const KENYA = { lat: -2.5, lng: 38.5 } // neighbour: masked
 const SEA = { lat: -8, lng: 41 } // Indian Ocean: masked
@@ -138,6 +139,7 @@ test('outside the region: ground + grid; inside: tiles; edge >= 3:1 to both side
     expectOnlyMask(await pixels(page, UNGUJA, 5), c, `${scheme} Zanzibar`, false)
 
     await expectTiles(page, DODOMA, `${scheme} mainland`)
+    await expectTiles(page, LAKE_VICTORIA, `${scheme} Lake Victoria`)
 
     expect(contrastRatio(c.edge!, c.ground), `${scheme}: edge vs ground`).toBeGreaterThanOrEqual(3)
     expect(contrastRatio(c.edge!, LAND), `${scheme}: edge vs tiles`).toBeGreaterThanOrEqual(3)

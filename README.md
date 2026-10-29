@@ -123,7 +123,8 @@ npx playwright install chromium && npm run test:e2e   # pixel test on the demo, 
 npm run demo                                          # http://localhost:5180
 ```
 
-The demo uses a Tanzania mainland outline (`demo/tz-mainland.geojson`). Map tiles in the screenshots:
+The demo uses a Tanzania mainland outline (`demo/tz-mainland.geojson`): the national boundary with the Tanzanian
+waters of Lakes Victoria, Tanganyika and Nyasa (median line), unioned with the NBS mainland wards. Map tiles in the screenshots:
 © OpenStreetMap contributors.
 
 ## License
